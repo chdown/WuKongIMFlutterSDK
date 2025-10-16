@@ -5,6 +5,8 @@ import 'package:wukongimfluttersdk/entity/channel_member.dart';
 import 'package:wukongimfluttersdk/entity/conversation.dart';
 import 'package:wukongimfluttersdk/entity/msg.dart';
 import 'package:wukongimfluttersdk/entity/reminder.dart';
+import 'package:wukongimfluttersdk/entity/robot.dart';
+import 'package:wukongimfluttersdk/entity/robot_menu.dart';
 import 'package:wukongimfluttersdk/model/wk_unknown_content.dart';
 import 'package:wukongimfluttersdk/type/const.dart';
 import 'package:wukongimfluttersdk/wkim.dart';
@@ -53,8 +55,7 @@ class WKDBConst {
     if (msg.content != '') {
       dynamic contentJson = jsonDecode(msg.content);
       if (contentJson != null && contentJson != '') {
-        msg.messageContent = WKIM.shared.messageManager
-            .getMessageModel(msg.contentType, contentJson);
+        msg.messageContent = WKIM.shared.messageManager.getMessageModel(msg.contentType, contentJson);
       } else {
         msg.messageContent = WKUnknownContent();
       }
@@ -62,8 +63,7 @@ class WKDBConst {
     if (msg.wkMsgExtra!.contentEdit != '') {
       dynamic json = jsonDecode(msg.wkMsgExtra!.contentEdit);
       if (json != null && json != '') {
-        msg.wkMsgExtra!.messageContent = WKIM.shared.messageManager
-            .getMessageModel(WkMessageContentType.text, json);
+        msg.wkMsgExtra!.messageContent = WKIM.shared.messageManager.getMessageModel(WkMessageContentType.text, json);
       }
     }
 
@@ -274,5 +274,35 @@ class WKDBConst {
       placeholders.write("?");
     }
     return placeholders.toString();
+  }
+
+  static WKRobot serializeRobot(Map<String, Object?> data) {
+    WKRobot robot = WKRobot();
+    robot.robotID = readString(data, 'robot_id');
+    robot.robotName = readString(data, 'robot_name');
+    robot.robotAvatar = readString(data, 'robot_avatar');
+    robot.robotType = readInt(data, 'robot_type');
+    robot.status = readInt(data, 'status');
+    robot.version = readInt(data, 'version');
+    robot.createdAt = readInt(data, 'created_at');
+    robot.updatedAt = readInt(data, 'updated_at');
+    robot.extra = readDynamic(data, 'extra');
+    return robot;
+  }
+
+  static WKRobotMenu serializeRobotMenu(Map<String, Object?> data) {
+    WKRobotMenu menu = WKRobotMenu();
+    menu.robotID = readString(data, 'robot_id');
+    menu.cmd = readString(data, 'cmd');
+    menu.name = readString(data, 'name');
+    menu.icon = readString(data, 'icon');
+    menu.type = readInt(data, 'type');
+    menu.sort = readInt(data, 'sort');
+    menu.status = readInt(data, 'status');
+    menu.version = readInt(data, 'version');
+    menu.createdAt = readInt(data, 'created_at');
+    menu.updatedAt = readInt(data, 'updated_at');
+    menu.extra = readDynamic(data, 'extra');
+    return menu;
   }
 }
