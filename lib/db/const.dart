@@ -7,6 +7,10 @@ import 'package:wukongimfluttersdk/entity/msg.dart';
 import 'package:wukongimfluttersdk/entity/reminder.dart';
 import 'package:wukongimfluttersdk/entity/robot.dart';
 import 'package:wukongimfluttersdk/entity/robot_menu.dart';
+import 'package:wukongimfluttersdk/entity/wk_base_cmd.dart';
+import 'package:wukongimfluttersdk/entity/new_friend_entity.dart';
+import 'package:wukongimfluttersdk/entity/mail_list_entity.dart';
+import 'package:wukongimfluttersdk/entity/prohibit_word.dart';
 import 'package:wukongimfluttersdk/model/wk_unknown_content.dart';
 import 'package:wukongimfluttersdk/type/const.dart';
 import 'package:wukongimfluttersdk/wkim.dart';
@@ -24,6 +28,10 @@ class WKDBConst {
   static const tableReminders = 'reminders';
   static const tableRobot = 'robot';
   static const tableRobotMenu = 'robot_menu';
+  static const tableCmd = 'cmd';
+  static const tableApply = 'apply_tab';
+  static const tableUserContact = 'user_contact';
+  static const tableProhibitWords = 'prohibit_words';
 
   static WKMsg serializeWKMsg(dynamic data) {
     WKMsg msg = WKMsg();
@@ -348,5 +356,55 @@ class WKDBConst {
   /// 序列化提醒 (别名方法)
   static WKReminder serializeWKReminder(Map<String, Object?> data) {
     return serializeReminder(data);
+  }
+
+  /// 序列化基础CMD
+  static WKBaseCMD serializeWKBaseCMD(Map<String, Object?> data) {
+    WKBaseCMD cmd = WKBaseCMD();
+    cmd.messageID = readString(data, 'message_id');
+    cmd.messageSeq = readInt(data, 'message_seq');
+    cmd.clientMsgNo = readString(data, 'client_msg_no');
+    cmd.timestamp = readInt(data, 'timestamp');
+    cmd.cmd = readString(data, 'cmd');
+    cmd.sign = readString(data, 'sign');
+    cmd.param = readString(data, 'param');
+    cmd.isDeleted = readInt(data, 'is_deleted');
+    cmd.createdAt = readString(data, 'created_at');
+    return cmd;
+  }
+
+  /// 序列化好友申请
+  static NewFriendEntity serializeNewFriendEntity(Map<String, Object?> data) {
+    NewFriendEntity entity = NewFriendEntity();
+    entity.applyUid = readString(data, 'apply_uid');
+    entity.applyName = readString(data, 'apply_name');
+    entity.token = readString(data, 'token');
+    entity.status = readInt(data, 'status');
+    entity.remark = readString(data, 'remark');
+    entity.createdAt = readString(data, 'created_at');
+    return entity;
+  }
+
+  /// 序列化通讯录
+  static MailListEntity serializeMailListEntity(Map<String, Object?> data) {
+    MailListEntity entity = MailListEntity();
+    entity.phone = readString(data, 'phone');
+    entity.zone = readString(data, 'zone');
+    entity.name = readString(data, 'name');
+    entity.uid = readString(data, 'uid');
+    entity.vercode = readString(data, 'vercode');
+    entity.isFriend = readInt(data, 'is_friend');
+    return entity;
+  }
+
+  /// 序列化敏感词
+  static ProhibitWord serializeProhibitWord(Map<String, Object?> data) {
+    ProhibitWord word = ProhibitWord();
+    word.id = readInt(data, 'sid');
+    word.content = readString(data, 'content');
+    word.isDeleted = readInt(data, 'is_deleted');
+    word.version = readInt(data, 'version');
+    word.createdAt = readString(data, 'created_at');
+    return word;
   }
 }
