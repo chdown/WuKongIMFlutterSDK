@@ -25,14 +25,12 @@ class ConversationDB {
     if (WKDBHelper.shared.getDB() == null) {
       return list;
     }
-    List<Map<String, Object?>> results =
-        await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql);
     if (results.isNotEmpty) {
       for (Map<String, Object?> data in results) {
         WKConversationMsg msg = WKDBConst.serializeCoversation(data);
         WKChannel wkChannel = WKDBConst.serializeChannel(data);
-        wkChannel.remoteExtraMap =
-            WKDBConst.readDynamic(data, 'channel_remote_extra');
+        wkChannel.remoteExtraMap = WKDBConst.readDynamic(data, 'channel_remote_extra');
         wkChannel.localExtra = WKDBConst.readDynamic(data, 'channel_extra');
         WKUIConversationMsg uiMsg = getUIMsg(msg);
         uiMsg.setWkChannel(wkChannel);
@@ -48,38 +46,30 @@ class ConversationDB {
     }
     Map<String, dynamic> data = HashMap<String, Object>();
     data['is_deleted'] = 1;
-    int row = await WKDBHelper.shared.getDB()!.update(
-        WKDBConst.tableConversation, data,
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channelID, channelType]);
+    int row = await WKDBHelper.shared
+        .getDB()!
+        .update(WKDBConst.tableConversation, data, where: "channel_id=? and channel_type=?", whereArgs: [channelID, channelType]);
     return row > 0;
   }
 
-  Future<WKUIConversationMsg?> insertOrUpdateWithConvMsg(
-      WKConversationMsg conversationMsg) async {
+  Future<WKUIConversationMsg?> insertOrUpdateWithConvMsg(WKConversationMsg conversationMsg) async {
     if (WKDBHelper.shared.getDB() == null) {
       return null;
     }
     int row;
-    WKConversationMsg? lastMsg = await queryMsgByMsgChannelId(
-        conversationMsg.channelID, conversationMsg.channelType);
+    WKConversationMsg? lastMsg = await queryMsgByMsgChannelId(conversationMsg.channelID, conversationMsg.channelType);
 
     if (lastMsg == null || lastMsg.channelID.isEmpty) {
-      row = await WKDBHelper.shared.getDB()!.insert(
-          WKDBConst.tableConversation, getMap(conversationMsg, false),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+      row = await WKDBHelper.shared.getDB()!.insert(WKDBConst.tableConversation, getMap(conversationMsg, false), conflictAlgorithm: ConflictAlgorithm.replace);
     } else {
       // 这里有错误数据，需要清理
       var len = lastMsg.localExtraMap?.toString().length ?? 0;
       if (len < 1000000) {
         conversationMsg.localExtraMap ??= lastMsg.localExtraMap;
       }
-      conversationMsg.unreadCount =
-          lastMsg.unreadCount + conversationMsg.unreadCount;
-      row = await WKDBHelper.shared.getDB()!.update(
-          WKDBConst.tableConversation, getMap(conversationMsg, false),
-          where: "channel_id=? and channel_type=?",
-          whereArgs: [conversationMsg.channelID, conversationMsg.channelType]);
+      conversationMsg.unreadCount = lastMsg.unreadCount + conversationMsg.unreadCount;
+      row = await WKDBHelper.shared.getDB()!.update(WKDBConst.tableConversation, getMap(conversationMsg, false),
+          where: "channel_id=? and channel_type=?", whereArgs: [conversationMsg.channelID, conversationMsg.channelType]);
     }
     if (row > 0) {
       return getUIMsg(conversationMsg);
@@ -87,16 +77,13 @@ class ConversationDB {
     return null;
   }
 
-  Future<WKConversationMsg?> queryMsgByMsgChannelId(
-      String channelId, int channelType) async {
+  Future<WKConversationMsg?> queryMsgByMsgChannelId(String channelId, int channelType) async {
     WKConversationMsg? msg;
     if (WKDBHelper.shared.getDB() == null) {
       return msg;
     }
-    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableConversation,
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channelId, channelType]);
+    List<Map<String, Object?>> list =
+        await WKDBHelper.shared.getDB()!.query(WKDBConst.tableConversation, where: "channel_id=? and channel_type=?", whereArgs: [channelId, channelType]);
     if (list.isNotEmpty) {
       msg = WKDBConst.serializeCoversation(list[0]);
     }
@@ -113,12 +100,10 @@ class ConversationDB {
       for (var channel in channels) {
         channelIds.add(channel.channelID);
       }
-      sql =
-          "select SUM(unread_count) count from ${WKDBConst.tableConversation} where channel_id not in (${WKDBConst.getPlaceholders(channelIds.length)})";
+      sql = "select SUM(unread_count) count from ${WKDBConst.tableConversation} where channel_id not in (${WKDBConst.getPlaceholders(channelIds.length)})";
       list = await WKDBHelper.shared.getDB()!.rawQuery(sql, channelIds);
     } else {
-      sql =
-          "select SUM(unread_count) count from ${WKDBConst.tableConversation}";
+      sql = "select SUM(unread_count) count from ${WKDBConst.tableConversation}";
       list = await WKDBHelper.shared.getDB()?.rawQuery(sql);
     }
     if (list == null || list.isEmpty) {
@@ -135,11 +120,9 @@ class ConversationDB {
     if (WKDBHelper.shared.getDB() == null) {
       return maxVersion;
     }
-    String sql =
-        "select max(version) version from ${WKDBConst.tableConversation} limit 0, 1";
+    String sql = "select max(version) version from ${WKDBConst.tableConversation} limit 0, 1";
 
-    List<Map<String, Object?>> list =
-        await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.rawQuery(sql);
     if (list.isNotEmpty) {
       dynamic data = list[0];
       maxVersion = WKDBConst.readInt(data, 'version');
@@ -155,8 +138,7 @@ class ConversationDB {
     String sql =
         "select GROUP_CONCAT(channel_id||':'||channel_type||':'|| last_seq,'|') synckey from (select *,(select max(message_seq) from ${WKDBConst.tableMessage} where ${WKDBConst.tableMessage}.channel_id=${WKDBConst.tableConversation}.channel_id and ${WKDBConst.tableMessage}.channel_type=${WKDBConst.tableConversation}.channel_type limit 1) last_seq from ${WKDBConst.tableConversation}) cn where channel_id<>'' AND is_deleted=0";
 
-    List<Map<String, Object?>> list =
-        await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.rawQuery(sql);
     if (list.isNotEmpty) {
       dynamic data = list[0];
       lastMsgSeqs = WKDBConst.readString(data, 'synckey');
@@ -164,17 +146,14 @@ class ConversationDB {
     return lastMsgSeqs;
   }
 
-  Future<List<WKConversationMsg>> queryWithChannelIds(
-      List<String> channelIds) async {
+  Future<List<WKConversationMsg>> queryWithChannelIds(List<String> channelIds) async {
     List<WKConversationMsg> list = [];
     if (WKDBHelper.shared.getDB() == null) {
       return list;
     }
-    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableConversation,
-        where:
-            "channel_id in (${WKDBConst.getPlaceholders(channelIds.length)})",
-        whereArgs: channelIds);
+    List<Map<String, Object?>> results = await WKDBHelper.shared
+        .getDB()!
+        .query(WKDBConst.tableConversation, where: "channel_id in (${WKDBConst.getPlaceholders(channelIds.length)})", whereArgs: channelIds);
     if (results.isNotEmpty) {
       for (Map<String, Object?> data in results) {
         list.add(WKDBConst.serializeCoversation(data));
@@ -194,8 +173,7 @@ class ConversationDB {
     WKDBHelper.shared.getDB()!.transaction((txn) async {
       if (insertList.isNotEmpty) {
         for (int i = 0; i < insertList.length; i++) {
-          txn.insert(WKDBConst.tableConversation, insertList[i],
-              conflictAlgorithm: ConflictAlgorithm.replace);
+          txn.insert(WKDBConst.tableConversation, insertList[i], conflictAlgorithm: ConflictAlgorithm.replace);
         }
       }
     });
@@ -219,8 +197,7 @@ class ConversationDB {
       bool isAdd = true;
       if (existList.isNotEmpty) {
         for (var i = 0; i < existList.length; i++) {
-          if (existList[i].channelID == msg.channelID &&
-              existList[i].channelType == msg.channelType) {
+          if (existList[i].channelID == msg.channelID && existList[i].channelType == msg.channelType) {
             updateList.add(getMap(msg, true));
             isAdd = false;
             break;
@@ -235,15 +212,12 @@ class ConversationDB {
       WKDBHelper.shared.getDB()!.transaction((txn) async {
         if (insertList.isNotEmpty) {
           for (int i = 0; i < insertList.length; i++) {
-            txn.insert(WKDBConst.tableConversation, insertList[i],
-                conflictAlgorithm: ConflictAlgorithm.replace);
+            txn.insert(WKDBConst.tableConversation, insertList[i], conflictAlgorithm: ConflictAlgorithm.replace);
           }
         }
         if (updateList.isNotEmpty) {
           for (Map<String, dynamic> value in updateList) {
-            txn.update(WKDBConst.tableConversation, value,
-                where: "channel_id=? and channel_type=?",
-                whereArgs: [value['channel_id'], value['channel_type']]);
+            txn.update(WKDBConst.tableConversation, value, where: "channel_id=? and channel_type=?", whereArgs: [value['channel_id'], value['channel_type']]);
           }
         }
       });
@@ -262,11 +236,9 @@ class ConversationDB {
     if (WKDBHelper.shared.getDB() == null) {
       return maxVersion;
     }
-    String sql =
-        "select max(version) version from ${WKDBConst.tableConversationExtra}";
+    String sql = "select max(version) version from ${WKDBConst.tableConversationExtra}";
 
-    List<Map<String, Object?>> list =
-        await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.rawQuery(sql);
     if (list.isNotEmpty) {
       dynamic data = list[0];
       maxVersion = WKDBConst.readInt(data, 'version');
@@ -281,20 +253,16 @@ class ConversationDB {
     var map = <String, Object>{};
 
     map['unread_count'] = 0;
-    return await WKDBHelper.shared
-        .getDB()!
-        .update(WKDBConst.tableConversation, map, where: "unread_count>0");
+    return await WKDBHelper.shared.getDB()!.update(WKDBConst.tableConversation, map, where: "unread_count>0");
   }
 
-  Future<int> updateWithField(
-      dynamic map, String channelID, int channelType) async {
+  Future<int> updateWithField(dynamic map, String channelID, int channelType) async {
     if (WKDBHelper.shared.getDB() == null) {
       return 0;
     }
-    return await WKDBHelper.shared.getDB()!.update(
-        WKDBConst.tableConversation, map,
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channelID, channelType]);
+    return await WKDBHelper.shared
+        .getDB()!
+        .update(WKDBConst.tableConversation, map, where: "channel_id=? and channel_type=?", whereArgs: [channelID, channelType]);
   }
 
   WKUIConversationMsg getUIMsg(WKConversationMsg conversationMsg) {
@@ -329,5 +297,215 @@ class ConversationDB {
       data['version'] = msg.version;
     }
     return data;
+  }
+
+  // ========== 新增的缺失方法 ==========
+
+  /// 按频道类型查询会话
+  Future<List<WKConversationMsg>> queryWithChannelType(int channelType) async {
+    List<WKConversationMsg> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableConversation} WHERE channel_type=? AND is_deleted=0 ORDER BY last_msg_timestamp DESC";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelType]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKConversationMsg(data));
+      }
+    }
+    return list;
+  }
+
+  /// 查询最大版本号
+  Future<int> queryMaxVersion() async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return 0;
+    }
+    String sql = "SELECT MAX(version) as max_version FROM ${WKDBConst.tableConversation}";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    if (results.isNotEmpty) {
+      return WKDBConst.readInt(results.first, 'max_version');
+    }
+    return 0;
+  }
+
+  /// 查询最后消息序号
+  Future<String> queryLastMsgSeqs() async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return "";
+    }
+    String sql = "SELECT last_msg_seq FROM ${WKDBConst.tableConversation} WHERE is_deleted=0 ORDER BY last_msg_timestamp DESC";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<String> seqs = [];
+    for (Map<String, Object?> data in results) {
+      int seq = WKDBConst.readInt(data, 'last_msg_seq');
+      if (seq > 0) {
+        seqs.add(seq.toString());
+      }
+    }
+    return seqs.join(',');
+  }
+
+  /// 按频道查询会话
+  Future<WKConversationMsg?> queryWithChannel(String channelID, int channelType) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return null;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableConversation} WHERE channel_id=? AND channel_type=?";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelID, channelType]);
+    if (results.isNotEmpty) {
+      return WKDBConst.serializeWKConversationMsg(results.first);
+    }
+    return null;
+  }
+
+  /// 查询会话扩展信息
+  Future<WKConversationMsgExtra?> queryMsgExtraWithChannel(String channelID, int channelType) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return null;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableConversationExtra} WHERE channel_id=? AND channel_type=?";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelID, channelType]);
+    if (results.isNotEmpty) {
+      return WKDBConst.serializeWKConversationMsgExtra(results.first);
+    }
+    return null;
+  }
+
+  /// 查询会话扩展最大版本
+  Future<int> queryMsgExtraMaxVersion() async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return 0;
+    }
+    String sql = "SELECT MAX(version) as max_version FROM ${WKDBConst.tableConversationExtra}";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    if (results.isNotEmpty) {
+      return WKDBConst.readInt(results.first, 'max_version');
+    }
+    return 0;
+  }
+
+  // ========== 补充缺失的方法 ==========
+
+  /// 插入同步消息
+  Future<bool> insertSyncMsg(Map<String, dynamic> cv) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    await WKDBHelper.shared.getDB()!.insert(WKDBConst.tableConversation, cv, conflictAlgorithm: ConflictAlgorithm.replace);
+    return true;
+  }
+
+  /// 更新红点状态
+  Future<bool> updateRedDot(String channelID, int channelType, int redDot) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    int result = await WKDBHelper.shared.getDB()!.update(
+          WKDBConst.tableConversation,
+          {'unread_count': redDot},
+          where: "channel_id=? AND channel_type=?",
+          whereArgs: [channelID, channelType],
+        );
+    return result > 0;
+  }
+
+  /// 更新消息
+  Future<bool> updateMsg(String channelID, int channelType, String clientMsgNo, int lastMsgSeq, int count) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    int result = await WKDBHelper.shared.getDB()!.update(
+          WKDBConst.tableConversation,
+          {
+            'last_client_msg_no': clientMsgNo,
+            'last_msg_seq': lastMsgSeq,
+            'unread_count': count,
+          },
+          where: "channel_id=? AND channel_type=?",
+          whereArgs: [channelID, channelType],
+        );
+    return result > 0;
+  }
+
+  /// 插入或更新会话(带消息)
+  Future<WKUIConversationMsg?> insertOrUpdateWithMsg(dynamic msg, int unreadCount) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return null;
+    }
+    WKConversationMsg conversationMsg = WKConversationMsg();
+    conversationMsg.channelID = msg.channelID;
+    conversationMsg.channelType = msg.channelType;
+    conversationMsg.lastClientMsgNO = msg.clientMsgNO;
+    conversationMsg.lastMsgTimestamp = msg.timestamp;
+    conversationMsg.lastMsgSeq = msg.messageSeq;
+    conversationMsg.unreadCount = unreadCount;
+    conversationMsg.isDeleted = 0;
+
+    await WKDBHelper.shared.getDB()!.insert(
+          WKDBConst.tableConversation,
+          getMap(conversationMsg, false),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+    return getUIMsg(conversationMsg);
+  }
+
+  /// 插入或更新会话扩展
+  Future<bool> insertOrUpdateMsgExtra(WKConversationMsgExtra extra) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    await WKDBHelper.shared.getDB()!.insert(
+          WKDBConst.tableConversationExtra,
+          getExtraMap(extra),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+    return true;
+  }
+
+  /// 插入会话扩展列表
+  Future<bool> insertMsgExtras(List<WKConversationMsgExtra> list) async {
+    if (WKDBHelper.shared.getDB() == null || list.isEmpty) {
+      return false;
+    }
+    List<Map<String, Object>> cvList = [];
+    for (WKConversationMsgExtra extra in list) {
+      cvList.add(getExtraMap(extra));
+    }
+    await WKDBHelper.shared.getDB()!.transaction((txn) async {
+      for (int i = 0; i < cvList.length; i++) {
+        txn.insert(WKDBConst.tableConversationExtra, cvList[i], conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+    return true;
+  }
+
+  /// 清理空数据
+  Future<bool> clearEmpty() async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    // 清理空的会话
+    await WKDBHelper.shared.getDB()!.delete(
+          WKDBConst.tableConversation,
+          where: "last_client_msg_no IS NULL OR last_client_msg_no = ''",
+        );
+    return true;
+  }
+
+  /// 获取会话扩展Map
+  Map<String, Object> getExtraMap(WKConversationMsgExtra extra) {
+    Map<String, Object> map = <String, Object>{};
+    map['channel_id'] = extra.channelID;
+    map['channel_type'] = extra.channelType;
+    map['browse_to'] = extra.browseTo;
+    map['keep_message_seq'] = extra.keepMessageSeq;
+    map['keep_offset_y'] = extra.keepOffsetY;
+    map['draft'] = extra.draft;
+    map['version'] = extra.version;
+    map['draft_updated_at'] = extra.draftUpdatedAt;
+    return map;
   }
 }

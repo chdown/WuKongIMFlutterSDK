@@ -5,6 +5,8 @@ import 'package:wukongimfluttersdk/entity/channel_member.dart';
 import 'package:wukongimfluttersdk/entity/conversation.dart';
 import 'package:wukongimfluttersdk/entity/msg.dart';
 import 'package:wukongimfluttersdk/entity/reminder.dart';
+import 'package:wukongimfluttersdk/entity/robot.dart';
+import 'package:wukongimfluttersdk/entity/robot_menu.dart';
 import 'package:wukongimfluttersdk/model/wk_unknown_content.dart';
 import 'package:wukongimfluttersdk/type/const.dart';
 import 'package:wukongimfluttersdk/wkim.dart';
@@ -53,8 +55,7 @@ class WKDBConst {
     if (msg.content != '') {
       dynamic contentJson = jsonDecode(msg.content);
       if (contentJson != null && contentJson != '') {
-        msg.messageContent = WKIM.shared.messageManager
-            .getMessageModel(msg.contentType, contentJson);
+        msg.messageContent = WKIM.shared.messageManager.getMessageModel(msg.contentType, contentJson);
       } else {
         msg.messageContent = WKUnknownContent();
       }
@@ -62,8 +63,7 @@ class WKDBConst {
     if (msg.wkMsgExtra!.contentEdit != '') {
       dynamic json = jsonDecode(msg.wkMsgExtra!.contentEdit);
       if (json != null && json != '') {
-        msg.wkMsgExtra!.messageContent = WKIM.shared.messageManager
-            .getMessageModel(WkMessageContentType.text, json);
+        msg.wkMsgExtra!.messageContent = WKIM.shared.messageManager.getMessageModel(WkMessageContentType.text, json);
       }
     }
 
@@ -274,5 +274,79 @@ class WKDBConst {
       placeholders.write("?");
     }
     return placeholders.toString();
+  }
+
+  // ========== 机器人相关序列化方法 ==========
+
+  /// 序列化机器人
+  static WKRobot serializeWKRobot(Map<String, Object?> data) {
+    WKRobot robot = WKRobot();
+    robot.robotID = readString(data, 'robot_id');
+    robot.robotName = readString(data, 'robot_name');
+    robot.robotAvatar = readString(data, 'robot_avatar');
+    robot.robotType = readInt(data, 'robot_type');
+    robot.status = readInt(data, 'status');
+    robot.version = readInt(data, 'version');
+    robot.createdAt = readInt(data, 'created_at');
+    robot.updatedAt = readInt(data, 'updated_at');
+    robot.extra = readDynamic(data, 'extra');
+    return robot;
+  }
+
+  /// 序列化机器人菜单
+  static WKRobotMenu serializeWKRobotMenu(Map<String, Object?> data) {
+    WKRobotMenu menu = WKRobotMenu();
+    menu.robotID = readString(data, 'robot_id');
+    menu.cmd = readString(data, 'cmd');
+    menu.name = readString(data, 'name');
+    menu.icon = readString(data, 'icon');
+    menu.type = readInt(data, 'type');
+    menu.sort = readInt(data, 'sort');
+    menu.status = readInt(data, 'status');
+    menu.version = readInt(data, 'version');
+    menu.createdAt = readInt(data, 'created_at');
+    menu.updatedAt = readInt(data, 'updated_at');
+    menu.extra = readDynamic(data, 'extra');
+    return menu;
+  }
+
+  /// 序列化消息反应
+  static WKMsgReaction serializeWKMsgReaction(Map<String, Object?> data) {
+    WKMsgReaction reaction = WKMsgReaction();
+    reaction.messageID = readString(data, 'message_id');
+    reaction.channelID = readString(data, 'channel_id');
+    reaction.channelType = readInt(data, 'channel_type');
+    reaction.uid = readString(data, 'uid');
+    reaction.name = readString(data, 'name');
+    reaction.seq = readInt(data, 'seq');
+    reaction.emoji = readString(data, 'emoji');
+    reaction.isDeleted = readInt(data, 'is_deleted');
+    reaction.createdAt = readString(data, 'created_at');
+    return reaction;
+  }
+
+  /// 序列化频道 (别名方法)
+  static WKChannel serializeWKChannel(Map<String, Object?> data) {
+    return serializeChannel(data);
+  }
+
+  /// 序列化频道成员 (别名方法)
+  static WKChannelMember serializeWKChannelMember(Map<String, Object?> data) {
+    return serializeChannelMember(data);
+  }
+
+  /// 序列化会话消息 (别名方法)
+  static WKConversationMsg serializeWKConversationMsg(Map<String, Object?> data) {
+    return serializeCoversation(data);
+  }
+
+  /// 序列化会话消息扩展 (别名方法)
+  static WKConversationMsgExtra serializeWKConversationMsgExtra(Map<String, Object?> data) {
+    return serializeConversationExtra(data);
+  }
+
+  /// 序列化提醒 (别名方法)
+  static WKReminder serializeWKReminder(Map<String, Object?> data) {
+    return serializeReminder(data);
   }
 }

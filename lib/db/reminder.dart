@@ -15,12 +15,10 @@ class ReminderDB {
   static ReminderDB get shared => _instance;
 
   Future<int> getMaxVersion() async {
-    String sql =
-        "select * from ${WKDBConst.tableReminders} order by version desc limit 1";
+    String sql = "select * from ${WKDBConst.tableReminders} order by version desc limit 1";
     int version = 0;
 
-    List<Map<String, Object?>> list =
-        await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.rawQuery(sql);
     if (list.isNotEmpty) {
       dynamic data = list[0];
       if (data != null) {
@@ -30,15 +28,10 @@ class ReminderDB {
     return version;
   }
 
-  Future<List<WKReminder>> queryWithChannel(
-      String channelID, int channelType, int done) async {
+  Future<List<WKReminder>> queryWithChannel(String channelID, int channelType, int done) async {
     List<WKReminder> list = [];
-    List<Map<String, Object?>>? results = await WKDBHelper.shared
-        .getDB()
-        ?.query(WKDBConst.tableReminders,
-            where: "channel_id=? and channel_type=? and done=?",
-            whereArgs: [channelID, channelType, done],
-            orderBy: "message_seq desc");
+    List<Map<String, Object?>>? results = await WKDBHelper.shared.getDB()?.query(WKDBConst.tableReminders,
+        where: "channel_id=? and channel_type=? and done=?", whereArgs: [channelID, channelType, done], orderBy: "message_seq desc");
     if (results == null || results.isEmpty) {
       return list;
     }
@@ -54,8 +47,7 @@ class ReminderDB {
     for (int i = 0, size = list.length; i < size; i++) {
       bool isAdd = true;
       for (String channelId in channelIds) {
-        if (list[i].channelID == list[i].channelID &&
-            channelId == list[i].channelID) {
+        if (list[i].channelID == list[i].channelID && channelId == list[i].channelID) {
           isAdd = false;
           break;
         }
@@ -86,14 +78,12 @@ class ReminderDB {
       WKDBHelper.shared.getDB()!.transaction((txn) async {
         if (addList.isNotEmpty) {
           for (Map<String, dynamic> value in addList) {
-            txn.insert(WKDBConst.tableReminders, value,
-                conflictAlgorithm: ConflictAlgorithm.replace);
+            txn.insert(WKDBConst.tableReminders, value, conflictAlgorithm: ConflictAlgorithm.replace);
           }
         }
         if (updateList.isNotEmpty) {
           for (Map<String, dynamic> value in updateList) {
-            txn.update(WKDBConst.tableReminders, value,
-                where: "reminder_id=${value['reminder_id']}");
+            txn.update(WKDBConst.tableReminders, value, where: "reminder_id=${value['reminder_id']}");
           }
         }
       });
@@ -102,8 +92,7 @@ class ReminderDB {
     List<WKReminder> reminderList = await queryWithChannelIds(channelIds);
     HashMap<String, List<WKReminder>?> maps = listToMap(reminderList);
     List<WKUIConversationMsg> uiMsgList = [];
-    List<WKConversationMsg> msgs =
-        await ConversationDB.shared.queryWithChannelIds(channelIds);
+    List<WKConversationMsg> msgs = await ConversationDB.shared.queryWithChannelIds(channelIds);
     for (int i = 0; i < msgs.length; i++) {
       uiMsgList.add(ConversationDB.shared.getUIMsg(msgs[i]));
     }
@@ -119,11 +108,9 @@ class ReminderDB {
 
   Future<List<WKReminder>> queryWithChannelIds(List<String> channelIds) async {
     List<WKReminder> list = [];
-    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableReminders,
-        where:
-            "channel_id in (${WKDBConst.getPlaceholders(channelIds.length)})",
-        whereArgs: channelIds);
+    List<Map<String, Object?>> results = await WKDBHelper.shared
+        .getDB()!
+        .query(WKDBConst.tableReminders, where: "channel_id in (${WKDBConst.getPlaceholders(channelIds.length)})", whereArgs: channelIds);
     if (results.isNotEmpty) {
       for (Map<String, Object?> data in results) {
         list.add(WKDBConst.serializeReminder(data));
@@ -134,10 +121,8 @@ class ReminderDB {
 
   Future<List<WKReminder>> queryWithIds(List<int> ids) async {
     List<WKReminder> list = [];
-    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableReminders,
-        where: "reminder_id in (${WKDBConst.getPlaceholders(ids.length)})",
-        whereArgs: ids);
+    List<Map<String, Object?>> results =
+        await WKDBHelper.shared.getDB()!.query(WKDBConst.tableReminders, where: "reminder_id in (${WKDBConst.getPlaceholders(ids.length)})", whereArgs: ids);
     if (results.isNotEmpty) {
       for (Map<String, Object?> data in results) {
         list.add(WKDBConst.serializeReminder(data));
@@ -187,5 +172,81 @@ class ReminderDB {
       map['data'] = '';
     }
     return map;
+  }
+
+  // ========== 新增的缺失方法 ==========
+
+  /// 查询最大版本号
+  Future<int> queryMaxVersion() async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return 0;
+    }
+    String sql = "SELECT MAX(version) as max_version FROM ${WKDBConst.tableReminders}";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql);
+    if (results.isNotEmpty) {
+      return WKDBConst.readInt(results.first, 'max_version');
+    }
+    return 0;
+  }
+
+  /// 按频道和完成状态查询
+  Future<List<WKReminder>> queryWithChannelAndDone(String channelID, int channelType, int done) async {
+    List<WKReminder> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableReminders} WHERE channel_id=? AND channel_type=? AND done=? ORDER BY created_at DESC";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelID, channelType, done]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKReminder(data));
+      }
+    }
+    return list;
+  }
+
+  /// 按频道、类型和完成状态查询
+  Future<List<WKReminder>> queryWithChannelAndTypeAndDone(String channelID, int channelType, int type, int done) async {
+    List<WKReminder> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableReminders} WHERE channel_id=? AND channel_type=? AND type=? AND done=? ORDER BY created_at DESC";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelID, channelType, type, done]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKReminder(data));
+      }
+    }
+    return list;
+  }
+
+  /// 标记提醒为已完成
+  Future<bool> doneWithReminderIds(List<int> ids) async {
+    if (WKDBHelper.shared.getDB() == null || ids.isEmpty) {
+      return false;
+    }
+    String sql = "UPDATE ${WKDBConst.tableReminders} SET done=1 WHERE id IN (${WKDBConst.getPlaceholders(ids.length)})";
+    await WKDBHelper.shared.getDB()!.rawQuery(sql, ids);
+    return true;
+  }
+
+  // ========== 补充缺失的方法 ==========
+
+  /// 插入或更新提醒
+  Future<List<WKReminder>> insertOrUpdateReminders(List<WKReminder> list) async {
+    if (WKDBHelper.shared.getDB() == null || list.isEmpty) {
+      return [];
+    }
+    List<Map<String, Object>> cvList = [];
+    for (WKReminder reminder in list) {
+      cvList.add(getMap(reminder));
+    }
+    await WKDBHelper.shared.getDB()!.transaction((txn) async {
+      for (int i = 0; i < cvList.length; i++) {
+        txn.insert(WKDBConst.tableReminders, cvList[i], conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+    return list;
   }
 }

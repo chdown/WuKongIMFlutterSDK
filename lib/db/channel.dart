@@ -17,10 +17,8 @@ class ChannelDB {
     if (WKDBHelper.shared.getDB() == null) {
       return channel;
     }
-    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableChannel,
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channelID, channelType]);
+    List<Map<String, Object?>> list =
+        await WKDBHelper.shared.getDB()!.query(WKDBConst.tableChannel, where: "channel_id=? and channel_type=?", whereArgs: [channelID, channelType]);
     if (list.isNotEmpty) {
       channel = WKDBConst.serializeChannel(list[0]);
     }
@@ -41,8 +39,7 @@ class ChannelDB {
       WKDBHelper.shared.getDB()!.transaction((txn) async {
         if (addList.isNotEmpty) {
           for (Map<String, dynamic> value in addList) {
-            txn.insert(WKDBConst.tableChannel, value,
-                conflictAlgorithm: ConflictAlgorithm.replace);
+            txn.insert(WKDBConst.tableChannel, value, conflictAlgorithm: ConflictAlgorithm.replace);
           }
         }
       });
@@ -54,14 +51,13 @@ class ChannelDB {
   }
 
   insert(WKChannel channel) {
-    WKDBHelper.shared.getDB()?.insert(WKDBConst.tableChannel, getMap(channel),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    WKDBHelper.shared.getDB()?.insert(WKDBConst.tableChannel, getMap(channel), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   update(WKChannel channel) {
-    WKDBHelper.shared.getDB()?.update(WKDBConst.tableChannel, getMap(channel),
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channel.channelID, channel.channelType]);
+    WKDBHelper.shared
+        .getDB()
+        ?.update(WKDBConst.tableChannel, getMap(channel), where: "channel_id=? and channel_type=?", whereArgs: [channel.channelID, channel.channelType]);
   }
 
   Future<bool> isExist(String channelID, int channelType) async {
@@ -69,10 +65,8 @@ class ChannelDB {
     if (WKDBHelper.shared.getDB() == null) {
       return isExit;
     }
-    List<Map<String, Object?>> list = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableChannel,
-        where: "channel_id=? and channel_type=?",
-        whereArgs: [channelID, channelType]);
+    List<Map<String, Object?>> list =
+        await WKDBHelper.shared.getDB()!.query(WKDBConst.tableChannel, where: "channel_id=? and channel_type=?", whereArgs: [channelID, channelType]);
     if (list.isNotEmpty) {
       dynamic data = list[0];
       if (data != null) {
@@ -85,8 +79,7 @@ class ChannelDB {
     return isExit;
   }
 
-  Future<List<WKChannel>> queryWithChannelIdsAndChannelType(
-      List<String> channelIDs, int channelType) async {
+  Future<List<WKChannel>> queryWithChannelIdsAndChannelType(List<String> channelIDs, int channelType) async {
     if (channelIDs.isEmpty) {
       return [];
     }
@@ -97,11 +90,9 @@ class ChannelDB {
     if (WKDBHelper.shared.getDB() == null) {
       return list;
     }
-    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.query(
-        WKDBConst.tableChannel,
-        where:
-            "channel_id in (${WKDBConst.getPlaceholders(channelIDs.length)}) and channel_type=?",
-        whereArgs: args);
+    List<Map<String, Object?>> results = await WKDBHelper.shared
+        .getDB()!
+        .query(WKDBConst.tableChannel, where: "channel_id in (${WKDBConst.getPlaceholders(channelIDs.length)}) and channel_type=?", whereArgs: args);
     if (results.isNotEmpty) {
       for (Map<String, Object?> data in results) {
         list.add(WKDBConst.serializeChannel(data));
@@ -114,10 +105,7 @@ class ChannelDB {
     List<WKChannelSearchResult> list = [];
     var sql =
         "select t.*,cm.member_name,cm.member_remark from (select ${WKDBConst.tableChannel}.*,max(${WKDBConst.tableChannelMember}.id) mid from ${WKDBConst.tableChannel}, ${WKDBConst.tableChannelMember} where ${WKDBConst.tableChannel}.channel_id=${WKDBConst.tableChannelMember}.channel_id and ${WKDBConst.tableChannel}.channel_type=${WKDBConst.tableChannelMember}.channel_type and (${WKDBConst.tableChannel}.channel_name like ? or ${WKDBConst.tableChannel}.channel_remark like ? or ${WKDBConst.tableChannelMember}.member_name like ? or ${WKDBConst.tableChannelMember}.member_remark like ?) group by ${WKDBConst.tableChannel}.channel_id,${WKDBConst.tableChannel}.channel_type) t,${WKDBConst.tableChannelMember} cm where t.channel_id=cm.channel_id and t.channel_type=cm.channel_type and t.mid=cm.id";
-    List<Map<String, Object?>> results = await WKDBHelper.shared
-        .getDB()!
-        .rawQuery(
-            sql, ['%$keyword%', '%$keyword%', '%$keyword%', '%$keyword%']);
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, ['%$keyword%', '%$keyword%', '%$keyword%', '%$keyword%']);
     for (Map<String, Object?> data in results) {
       var memberName = WKDBConst.readString(data, 'member_name');
       var memberRemark = WKDBConst.readString(data, 'member_remark');
@@ -141,14 +129,10 @@ class ChannelDB {
     return list;
   }
 
-  Future<List<WKChannel>> queryWithFollowAndStatus(
-      int channelType, int follow, int status) async {
+  Future<List<WKChannel>> queryWithFollowAndStatus(int channelType, int follow, int status) async {
     List<WKChannel> list = [];
-    var sql =
-        "select * from ${WKDBConst.tableChannel} where channel_type=? and follow=? and status=? and is_deleted=0";
-    List<Map<String, Object?>> results = await WKDBHelper.shared
-        .getDB()!
-        .rawQuery(sql, [channelType, follow, status]);
+    var sql = "select * from ${WKDBConst.tableChannel} where channel_type=? and follow=? and status=? and is_deleted=0";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelType, follow, status]);
     for (Map<String, Object?> data in results) {
       var channel = WKDBConst.serializeChannel(data);
       list.add(channel);
@@ -159,8 +143,7 @@ class ChannelDB {
   Future<List<WKChannel>> queryWithMuted() async {
     List<WKChannel> list = [];
     var sql = "select * from ${WKDBConst.tableChannel} where mute=1";
-    List<Map<String, Object?>>? results =
-        await WKDBHelper.shared.getDB()?.rawQuery(sql);
+    List<Map<String, Object?>>? results = await WKDBHelper.shared.getDB()?.rawQuery(sql);
     if (results == null || results.isEmpty) {
       return list;
     }
@@ -171,14 +154,10 @@ class ChannelDB {
     return list;
   }
 
-  Future<List<WKChannel>> searchWithChannelTypeAndFollow(
-      String keyword, int channelType, int follow) async {
+  Future<List<WKChannel>> searchWithChannelTypeAndFollow(String keyword, int channelType, int follow) async {
     List<WKChannel> list = [];
-    var sql =
-        "select * from ${WKDBConst.tableChannel} where (channel_name LIKE ? or channel_remark LIKE ?) and channel_type=? and follow=?";
-    List<Map<String, Object?>> results = await WKDBHelper.shared
-        .getDB()!
-        .rawQuery(sql, ['%$keyword%', '%$keyword%', channelType, follow]);
+    var sql = "select * from ${WKDBConst.tableChannel} where (channel_name LIKE ? or channel_remark LIKE ?) and channel_type=? and follow=?";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, ['%$keyword%', '%$keyword%', channelType, follow]);
     for (Map<String, Object?> data in results) {
       var channel = WKDBConst.serializeChannel(data);
       list.add(channel);
@@ -218,5 +197,126 @@ class ChannelDB {
     data['remote_extra'] = channel.remoteExtraMap?.toString() ?? "";
     data['extra'] = channel.localExtra?.toString() ?? "";
     return data;
+  }
+
+  // ========== 新增的缺失方法 ==========
+
+  /// 按频道ID列表查询
+  Future<List<WKChannel>> queryWithChannelIds(List<String> channelIds) async {
+    List<WKChannel> list = [];
+    if (WKDBHelper.shared.getDB() == null || channelIds.isEmpty) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableChannel} WHERE channel_id IN (${WKDBConst.getPlaceholders(channelIds.length)})";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, channelIds);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKChannel(data));
+      }
+    }
+    return list;
+  }
+
+  /// 按状态查询
+  Future<List<WKChannel>> queryWithStatus(int channelType, int status) async {
+    List<WKChannel> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableChannel} WHERE channel_type=? AND status=?";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelType, status]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKChannel(data));
+      }
+    }
+    return list;
+  }
+
+  /// 按类型和关注状态查询
+  Future<List<WKChannel>> queryWithChannelTypeAndFollow(int channelType, int follow) async {
+    List<WKChannel> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableChannel} WHERE channel_type=? AND follow=?";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelType, follow]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKChannel(data));
+      }
+    }
+    return list;
+  }
+
+  /// 按类型搜索频道
+  Future<List<WKChannel>> searchWithChannelType(String keyword, int channelType) async {
+    List<WKChannel> list = [];
+    if (WKDBHelper.shared.getDB() == null) {
+      return list;
+    }
+    String sql = "SELECT * FROM ${WKDBConst.tableChannel} WHERE channel_type=? AND (name LIKE ? OR remark LIKE ?)";
+    String searchKey = "%$keyword%";
+    List<Map<String, Object?>> results = await WKDBHelper.shared.getDB()!.rawQuery(sql, [channelType, searchKey, searchKey]);
+    if (results.isNotEmpty) {
+      for (Map<String, Object?> data in results) {
+        list.add(WKDBConst.serializeWKChannel(data));
+      }
+    }
+    return list;
+  }
+
+  /// 批量插入频道
+  Future<bool> insertChannels(List<WKChannel> list) async {
+    if (WKDBHelper.shared.getDB() == null || list.isEmpty) {
+      return false;
+    }
+    List<Map<String, Object>> cvList = [];
+    for (WKChannel channel in list) {
+      cvList.add(getMap(channel));
+    }
+    await WKDBHelper.shared.getDB()!.transaction((txn) async {
+      for (int i = 0; i < cvList.length; i++) {
+        txn.insert(WKDBConst.tableChannel, cvList[i], conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+    return true;
+  }
+
+  /// 插入或更新频道
+  Future<bool> insertOrUpdate(WKChannel channel) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    await WKDBHelper.shared.getDB()!.insert(WKDBConst.tableChannel, getMap(channel), conflictAlgorithm: ConflictAlgorithm.replace);
+    return true;
+  }
+
+  /// 更新频道
+  Future<bool> updateChannel(WKChannel channel) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    int result = await WKDBHelper.shared.getDB()!.update(
+      WKDBConst.tableChannel,
+      getMap(channel),
+      where: "channel_id=? AND channel_type=?",
+      whereArgs: [channel.channelID, channel.channelType],
+    );
+    return result > 0;
+  }
+
+  /// 更新频道字段
+  Future<bool> updateWithField(String channelID, int channelType, String field, String value) async {
+    if (WKDBHelper.shared.getDB() == null) {
+      return false;
+    }
+    int result = await WKDBHelper.shared.getDB()!.update(
+          WKDBConst.tableChannel,
+          {field: value},
+          where: "channel_id=? AND channel_type=?",
+          whereArgs: [channelID, channelType],
+        );
+    return result > 0;
   }
 }
